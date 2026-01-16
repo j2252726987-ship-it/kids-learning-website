@@ -19,13 +19,44 @@ export function PinyinCard({ letter, onClick, size = 'medium' }: PinyinCardProps
     stopSpeaking(); // 停止之前的朗读
 
     if ('speechSynthesis' in window) {
-      // 使用示例词的第一个汉字来发音
-      // 这样可以避免拼音被误识别为日语，确保用中文发音
-      const exampleChar = letter.examples[0][0]; // 获取第一个示例词的第一个字
+      // 拼音到带声调拼音的映射（使用第一声，避免日语识别）
+      const pinyinToneMap: Record<string, string> = {
+        // 声母（使用对应的完整音节）
+        'b': 'bō', 'p': 'pō', 'm': 'mō', 'f': 'fō',
+        'd': 'dē', 't': 'tē', 'n': 'nē', 'l': 'lē',
+        'g': 'gē', 'k': 'kē', 'h': 'hē',
+        'j': 'jī', 'q': 'qī', 'x': 'xī',
+        'zh': 'zhī', 'ch': 'chī', 'sh': 'shī', 'r': 'rī',
+        'z': 'zī', 'c': 'cī', 's': 'sī',
+        'y': 'yī', 'w': 'wū',
 
-      console.log('朗读内容:', exampleChar, '拼音:', letter.pinyin, '类型:', letter.category, 'letter:', letter.letter);
+        // 单韵母
+        'a': 'ā', 'o': 'ō', 'e': 'ē',
+        'i': 'ī', 'u': 'ū', 'yu': 'yū',
 
-      const utterance = new SpeechSynthesisUtterance(exampleChar);
+        // 复韵母
+        'ai': 'āi', 'ei': 'ēi', 'ui': 'wēi',
+        'ao': 'āo', 'ou': 'ōu', 'iu': 'yōu',
+        'ie': 'iē', 'yue': 'yuē',
+        'er': 'ēr',
+        'an': 'ān', 'en': 'ēn', 'in': 'yīn',
+        'wen': 'wēn', 'yun': 'yūn',
+        'ang': 'āng', 'eng': 'ēng', 'ing': 'yīng', 'ong': 'ōng',
+
+        // 整体认读音节
+        'zhi': 'zhī', 'chi': 'chī', 'shi': 'shī', 'ri': 'rī',
+        'zi': 'zī', 'ci': 'cī', 'si': 'sī',
+        'yi': 'yī', 'wu': 'wū', 'yu': 'yū',
+        'ye': 'yē', 'yue': 'yuē',
+        'yuan': 'yuān', 'yin': 'yīn', 'yun': 'yūn', 'ying': 'yīng',
+      };
+
+      // 获取带声调的拼音
+      const textToSpeak = pinyinToneMap[letter.pinyin] || letter.pinyin;
+
+      console.log('原始拼音:', letter.pinyin, '朗读内容:', textToSpeak, '类型:', letter.category);
+
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = 'zh-CN';
       utterance.rate = 1.0; // 正常语速
       utterance.pitch = 1.1; // 女主播播音音调
@@ -41,7 +72,7 @@ export function PinyinCard({ letter, onClick, size = 'medium' }: PinyinCardProps
       }
 
       utterance.onend = () => {
-        console.log('朗读结束:', exampleChar);
+        console.log('朗读成功:', textToSpeak);
         setIsSpeaking(false);
       };
       utterance.onerror = (e) => {
