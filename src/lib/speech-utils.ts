@@ -3,6 +3,8 @@
  * 提供更纯正、更清晰的中文语音朗读功能
  */
 
+import { fixPinyinPronunciation } from './pronunciation-fix';
+
 export interface SpeechOptions {
   rate?: number; // 语速：0.1-10，默认0.9（适中，男主播播音标准）
   pitch?: number; // 音调：0-2，默认0.9（低沉，男主播播音标准音调）
@@ -196,10 +198,13 @@ export function initSpeechEngine(): void {
 
 /**
  * 朗读拼音（男主播播音口音 - 清晰有力）
+ * 自动修正发音问题
  */
 export function speakPinyin(pinyin: string): void {
+  // 修正拼音发音
+  const fixedPinyin = fixPinyinPronunciation(pinyin);
   // 拼音朗读时语速稍快（0.95），使用男主播播音音调（0.9）
-  speakText(pinyin, { rate: 0.95, pitch: 0.9 });
+  speakText(fixedPinyin, { rate: 0.95, pitch: 0.9 });
 }
 
 /**
