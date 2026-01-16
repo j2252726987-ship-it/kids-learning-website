@@ -18,27 +18,28 @@ export function PinyinCard({ letter, onClick, size = 'medium' }: PinyinCardProps
     setIsSpeaking(true);
     stopSpeaking(); // 停止之前的朗读
 
-    // 直接朗读拼音，使用女声
     if ('speechSynthesis' in window) {
-      // 在拼音前加上顿号，让浏览器识别为中文环境
-      const textToSpeak = '、' + letter.pinyin;
+      // 使用带声调数字的拼音格式（第一声）
+      // 这样TTS引擎能正确识别拼音发音
+      const textToSpeak = letter.pinyin + '1';
 
-      console.log('朗读内容:', textToSpeak, '类型:', letter.category);
+      console.log('朗读内容:', textToSpeak, '类型:', letter.category, 'letter:', letter.letter, '原始拼音:', letter.pinyin);
 
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = 'zh-CN';
-      utterance.rate = 0.95; // 适中语速
-      utterance.pitch = 1.1; // 女主播播音音调（清亮温柔）
+      utterance.rate = 0.9; // 适中语速
+      utterance.pitch = 1.1; // 女主播播音音调
 
       // 选择女声
       const voices = window.speechSynthesis.getVoices();
-      const femaleVoices = voices.filter(v =>
-        v.lang === 'zh-CN' &&
-        (v.name.includes('xiaoxi') || v.name.includes('huihui') || v.name.includes('lili') || v.name.toLowerCase().includes('female'))
+      const chineseVoices = voices.filter(v =>
+        v.lang === 'zh-CN' || v.lang.startsWith('zh')
       );
-      if (femaleVoices.length > 0) {
-        utterance.voice = femaleVoices[0];
-        console.log('使用语音:', femaleVoices[0].name);
+      if (chineseVoices.length > 0) {
+        utterance.voice = chineseVoices[0];
+        console.log('使用语音:', chineseVoices[0].name, '语言:', chineseVoices[0].lang);
+      } else {
+        console.log('未找到中文语音，使用默认语音');
       }
 
       utterance.onend = () => {
@@ -46,7 +47,7 @@ export function PinyinCard({ letter, onClick, size = 'medium' }: PinyinCardProps
         setIsSpeaking(false);
       };
       utterance.onerror = (e) => {
-        console.error('朗读错误:', e, textToSpeak);
+        console.error('朗读错误:', e, '错误信息:', e.error, textToSpeak);
         setIsSpeaking(false);
       };
       speechSynthesis.speak(utterance);
