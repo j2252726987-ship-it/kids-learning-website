@@ -2,6 +2,7 @@
 
 import { PinyinLetter } from '@/lib/pinyin-data';
 import { speakPinyin, stopSpeaking } from '@/lib/speech-utils';
+import { fixShengmuPronunciation, fixPinyinPronunciation } from '@/lib/pronunciation-fix';
 import { useState } from 'react';
 
 interface PinyinCardProps {
@@ -18,12 +19,31 @@ export function PinyinCard({ letter, onClick, size = 'medium' }: PinyinCardProps
     setIsSpeaking(true);
     stopSpeaking(); // 停止之前的朗读
 
-    // 创建utterance来监听结束事件
+    // 根据拼音类型选择合适的朗读方式
     if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(letter.pinyin);
+      let textToSpeak = '';
+
+      if (letter.category === 'shengmu') {
+        // 声母：使用 letter 字符查找对应的完整音节
+        textToSpeak = fixShengmuPronunciation(letter.letter);
+      } else if (letter.category === 'yunmu') {
+        // 韵母：使用标准拼音修正
+        textToSpeak = fixPinyinPronunciation(letter.pinyin);
+      } else if (letter.category === 'zhengtiren') {
+        // 整体认读音节：直接使用 pinyin
+        textToSpeak = letter.pinyin;
+      } else {
+        // 默认使用原始 pinyin
+        textToSpeak = letter.pinyin;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = 'zh-CN';
       utterance.rate = 0.95; // 使用优化的语速
+      utterance.pitch = 0.9; // 男主播播音音调
+
       utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
       speechSynthesis.speak(utterance);
     }
   };

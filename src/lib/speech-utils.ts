@@ -3,7 +3,12 @@
  * 提供更纯正、更清晰的中文语音朗读功能
  */
 
-import { fixPinyinPronunciation } from './pronunciation-fix';
+import {
+  fixPinyinPronunciation,
+  fixShengmuForReading,
+  fixYunmuForReading,
+  fixZhengtiRenyinForReading
+} from './pronunciation-fix';
 
 export interface SpeechOptions {
   rate?: number; // 语速：0.1-10，默认0.9（适中，男主播播音标准）
@@ -205,6 +210,30 @@ export function speakPinyin(pinyin: string): void {
   const fixedPinyin = fixPinyinPronunciation(pinyin);
   // 拼音朗读时语速稍快（0.95），使用男主播播音音调（0.9）
   speakText(fixedPinyin, { rate: 0.95, pitch: 0.9 });
+}
+
+/**
+ * 朗读声母（使用对应的完整音节）
+ */
+export function speakShengmu(shengmu: string): void {
+  const fixed = fixShengmuForReading(shengmu);
+  speakText(fixed, { rate: 0.95, pitch: 0.9 });
+}
+
+/**
+ * 朗读韵母（使用零声母规则）
+ */
+export function speakYunmu(yunmu: string): void {
+  const fixed = fixYunmuForReading(yunmu);
+  speakText(fixed, { rate: 0.95, pitch: 0.9 });
+}
+
+/**
+ * 朗读整体认读音节
+ */
+export function speakZhengtiRenyin(pinyin: string): void {
+  const fixed = fixZhengtiRenyinForReading(pinyin);
+  speakText(fixed, { rate: 0.95, pitch: 0.9 });
 }
 
 /**

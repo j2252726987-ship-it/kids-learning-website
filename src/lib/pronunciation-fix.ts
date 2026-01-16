@@ -64,17 +64,17 @@ export function removeTones(pinyin: string): string {
 }
 
 /**
- * 修正单字母拼音
+ * 修正单字母拼音（用于韵母和整体认读音节）
  */
 export function fixSingleLetterPinyin(pinyin: string): string {
   const singleLetterMap: Record<string, string> = {
-    'a': 'a',
-    'o': 'o',
-    'e': 'e',
-    'i': 'yi',
-    'u': 'wu',
-    'v': 'yu',
-    'ü': 'yu',
+    'a': 'a',      // 单韵母
+    'o': 'o',      // 单韵母
+    'e': 'e',      // 单韵母
+    'i': 'yi',     // 单韵母 i → yi
+    'u': 'wu',     // 单韵母 u → wu
+    'v': 'yu',     // 单韵母 ü → yu
+    'ü': 'yu',     // 单韵母 ü → yu
   };
 
   if (singleLetterMap[pinyin]) {
@@ -82,6 +82,40 @@ export function fixSingleLetterPinyin(pinyin: string): string {
   }
 
   return pinyin;
+}
+
+/**
+ * 修正单字母声母的发音
+ * 添加一个完整音节让浏览器能够正确朗读
+ */
+export function fixShengmuPronunciation(shengmu: string): string {
+  const shengmuMap: Record<string, string> = {
+    'b': 'bo',    // 玻
+    'p': 'po',    // 坡
+    'm': 'mo',    // 摸
+    'f': 'fo',    // 佛
+    'd': 'de',    // 得
+    't': 'te',    // 特
+    'n': 'ne',    // 讷
+    'l': 'le',    // 勒
+    'g': 'ge',    // 哥
+    'k': 'ke',    // 科
+    'h': 'he',    // 喝
+    'j': 'ji',    // 基
+    'q': 'qi',    // 期
+    'x': 'xi',    // 希
+    'zh': 'zhi',  // 知
+    'ch': 'chi',  // 吃
+    'sh': 'shi',  // 诗
+    'r': 'ri',    // 日
+    'z': 'zi',    // 资
+    'c': 'ci',    // 刺
+    's': 'si',    // 思
+    'y': 'yi',    // 衣
+    'w': 'wu',    // 乌
+  };
+
+  return shengmuMap[shengmu] || shengmu;
 }
 
 /**
@@ -137,7 +171,7 @@ export function fixYWCombinations(pinyin: string): string {
     'uan': 'wan',
     'uen': 'wen',
     'uang': 'wang',
-    'ong': 'weng', // 特殊处理
+    // 注意：ong 不转换，它本身就是完整韵母
   };
 
   for (const [key, value] of Object.entries(wCombinations)) {
@@ -170,7 +204,7 @@ export function fixUCombinations(pinyin: string): string {
 }
 
 /**
- * 完整的拼音修正流程
+ * 完整的拼音修正流程（用于修正可能读错的拼音）
  */
 export function fixPinyinPronunciation(pinyin: string): string {
   if (!pinyin) return pinyin;
@@ -184,21 +218,58 @@ export function fixPinyinPronunciation(pinyin: string): string {
   // 3. 修正 ü 相关组合
   fixed = fixUCombinations(fixed);
 
-  // 4. 修正 y/w 组合
+  // 4. 修正 y/w 组合（只对以这些字母开头的拼音生效）
   fixed = fixYWCombinations(fixed);
 
-  // 5. 修正复合韵母
+  // 5. 修正复合韵母（只在特定情况下生效）
   fixed = fixCompoundYunmu(fixed);
 
-  // 6. 修正单字母拼音
+  // 6. 修正单字母拼音（单韵母）
   fixed = fixSingleLetterPinyin(fixed);
 
   // 7. 查表修正（兜底）
   if (PINYIN_PRONUNCIATION_MAP[fixed]) {
-    fixed = PINYIN_PRONUNCIATION_MAP[fixed];
+    fixed = PINYIN_PRONCIATION_MAP[fixed];
   }
 
   return fixed;
+}
+
+/**
+ * 修正声母发音（专用于声母朗读）
+ * 检查是否是声母单字母，如果是则使用对应的完整音节
+ */
+export function fixShengmuForReading(shengmu: string): string {
+  // 常见声母列表
+  const shengmus = ['b', 'p', 'm', 'f', 'd', 't', 'n', 'l', 'g', 'k', 'h',
+                    'j', 'q', 'x', 'zh', 'ch', 'sh', 'r', 'z', 'c', 's'];
+
+  // 如果是单字母声母，使用对应的完整音节
+  if (shengmus.includes(shengmu)) {
+    return fixShengmuPronunciation(shengmu);
+  }
+
+  // 如果是其他形式的拼音，使用标准修正
+  return fixPinyinPronunciation(shengmu);
+}
+
+/**
+ * 修正韵母发音（专用于韵母朗读）
+ * 韵母本身就是完整的拼音，只需零声母规则修正
+ */
+export function fixYunmuForReading(yunmu: string): string {
+  // 韵母直接使用标准修正（会处理零声母规则）
+  return fixPinyinPronunciation(yunmu);
+}
+
+/**
+ * 修正整体认读音节发音
+ * 整体认读音节直接朗读即可
+ */
+export function fixZhengtiRenyinForReading(pinyin: string): string {
+  // 整体认读音节通常是完整的拼音，直接朗读
+  // 但可能需要移除声调
+  return removeTones(pinyin);
 }
 
 /**
