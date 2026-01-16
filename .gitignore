@@ -48,3 +48,6 @@ Thumbs.db
 # Temp files
 *.tmp
 *.temp
+
+# Assets folder (not part of project)
+assets/
