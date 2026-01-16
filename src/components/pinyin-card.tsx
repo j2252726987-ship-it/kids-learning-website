@@ -19,35 +19,33 @@ export function PinyinCard({ letter, onClick, size = 'medium' }: PinyinCardProps
     stopSpeaking(); // 停止之前的朗读
 
     if ('speechSynthesis' in window) {
-      // 使用带声调数字的拼音格式（第一声）
-      // 这样TTS引擎能正确识别拼音发音
-      const textToSpeak = letter.pinyin + '1';
+      // 使用示例词的第一个汉字来发音
+      // 这样可以避免拼音被误识别为日语，确保用中文发音
+      const exampleChar = letter.examples[0][0]; // 获取第一个示例词的第一个字
 
-      console.log('朗读内容:', textToSpeak, '类型:', letter.category, 'letter:', letter.letter, '原始拼音:', letter.pinyin);
+      console.log('朗读内容:', exampleChar, '拼音:', letter.pinyin, '类型:', letter.category, 'letter:', letter.letter);
 
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      const utterance = new SpeechSynthesisUtterance(exampleChar);
       utterance.lang = 'zh-CN';
-      utterance.rate = 0.9; // 适中语速
+      utterance.rate = 1.0; // 正常语速
       utterance.pitch = 1.1; // 女主播播音音调
 
-      // 选择女声
+      // 选择中文语音
       const voices = window.speechSynthesis.getVoices();
-      const chineseVoices = voices.filter(v =>
-        v.lang === 'zh-CN' || v.lang.startsWith('zh')
-      );
-      if (chineseVoices.length > 0) {
-        utterance.voice = chineseVoices[0];
-        console.log('使用语音:', chineseVoices[0].name, '语言:', chineseVoices[0].lang);
+      const zhCNVoices = voices.filter(v => v.lang === 'zh-CN');
+      if (zhCNVoices.length > 0) {
+        utterance.voice = zhCNVoices[0];
+        console.log('使用语音:', zhCNVoices[0].name);
       } else {
-        console.log('未找到中文语音，使用默认语音');
+        console.log('未找到zh-CN语音');
       }
 
       utterance.onend = () => {
-        console.log('朗读结束:', textToSpeak);
+        console.log('朗读结束:', exampleChar);
         setIsSpeaking(false);
       };
       utterance.onerror = (e) => {
-        console.error('朗读错误:', e, '错误信息:', e.error, textToSpeak);
+        console.error('朗读错误:', e);
         setIsSpeaking(false);
       };
       speechSynthesis.speak(utterance);
