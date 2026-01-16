@@ -195,60 +195,60 @@ export function initSpeechEngine(): void {
 }
 
 /**
- * 朗读拼音（男主播播音口音 - 清晰有力）
- * 自动修正发音问题
+ * 朗读拼音（女主播播音口音 - 清亮温柔）
+ * 使用对应的汉字来朗读拼音的声音，确保发音准确
  */
 export function speakPinyin(pinyin: string): void {
-  // 修正拼音发音
+  // 修正拼音发音，转换为对应汉字
   const fixedPinyin = fixPinyinPronunciation(pinyin);
-  // 拼音朗读时语速稍快（0.95），使用男主播播音音调（0.9）
-  speakText(fixedPinyin, { rate: 0.95, pitch: 0.9 });
+  // 拼音朗读时语速适中（0.95），使用女主播播音音调（1.1）
+  speakText(fixedPinyin, { rate: 0.95, pitch: 1.1 });
 }
 
 /**
- * 朗读声母（使用对应的完整音节）
+ * 朗读声母（使用对应的完整音节 - 女主播播音口音）
  */
 export function speakShengmu(shengmu: string): void {
   const fixed = fixShengmuForReading(shengmu);
-  speakText(fixed, { rate: 0.95, pitch: 0.9 });
+  speakText(fixed, { rate: 0.95, pitch: 1.1 });
 }
 
 /**
- * 朗读韵母（使用零声母规则）
+ * 朗读韵母（使用零声母规则 - 女主播播音口音）
  */
 export function speakYunmu(yunmu: string): void {
   const fixed = fixYunmuForReading(yunmu);
-  speakText(fixed, { rate: 0.95, pitch: 0.9 });
+  speakText(fixed, { rate: 0.95, pitch: 1.1 });
 }
 
 /**
- * 朗读整体认读音节
+ * 朗读整体认读音节（女主播播音口音）
  */
 export function speakZhengtiRenyin(pinyin: string): void {
   const fixed = fixZhengtiRenyinForReading(pinyin);
-  speakText(fixed, { rate: 0.95, pitch: 0.9 });
+  speakText(fixed, { rate: 0.95, pitch: 1.1 });
 }
 
 /**
- * 朗读汉字（男主播播音口音 - 稳重清晰）
+ * 朗读汉字（女主播播音口音 - 清亮温柔）
  */
 export function speakHanzi(hanzi: string): void {
-  // 汉字朗读时语速适中（0.9），使用男主播播音音调（0.9）
-  speakText(hanzi, { rate: 0.9, pitch: 0.9 });
+  // 汉字朗读时语速适中（0.9），使用女主播播音音调（1.1）
+  speakText(hanzi, { rate: 0.9, pitch: 1.1 });
 }
 
 /**
- * 朗读诗词（男主播播音口音 - 韵律优美）
+ * 朗读诗词（女主播播音口音 - 韵律优美）
  */
 export function speakPoem(text: string): void {
-  // 诗词朗读时语速稍慢（0.85），更有韵律感，使用男主播播音音调（0.9）
-  speakText(text, { rate: 0.85, pitch: 0.9 });
+  // 诗词朗读时语速稍慢（0.85），更有韵律感，使用女主播播音音调（1.1）
+  speakText(text, { rate: 0.85, pitch: 1.1 });
 }
 
 /**
- * 朗读鼓励语（男主播播音口音 - 温暖有力）
+ * 朗读鼓励语（女主播播音口音 - 温暖有力）
  */
 export function speakEncouragement(text: string): void {
-  // 鼓励语朗读时语速适中（0.9），使用男主播播音音调（0.9）
-  speakText(text, { rate: 0.9, pitch: 0.9 });
+  // 鼓励语朗读时语速适中（0.9），使用女主播播音音调（1.1）
+  speakText(text, { rate: 0.9, pitch: 1.1 });
 }

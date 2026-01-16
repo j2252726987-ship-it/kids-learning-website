@@ -27,25 +27,25 @@ export function PinyinCard({ letter, onClick, size = 'medium' }: PinyinCardProps
         'g': 'gē', 'k': 'kē', 'h': 'hē',
         'j': 'jī', 'q': 'qī', 'x': 'xī',
         'zh': 'zhī', 'ch': 'chī', 'sh': 'shī', 'r': 'rī',
-        'z': 'zī', 'c': 'cī', 's': 'sī',
         'y': 'yī', 'w': 'wū',
 
         // 单韵母
         'a': 'ā', 'o': 'ō', 'e': 'ē',
-        'i': 'ī', 'u': 'ū', 'yu': 'yū',
+        'i': 'ī', 'u': 'ū',
+        'v': 'yū', 'ü': 'yū',
 
         // 复韵母
         'ai': 'āi', 'ei': 'ēi', 'ui': 'wēi',
         'ao': 'āo', 'ou': 'ōu', 'iu': 'yōu',
-        'ie': 'iē', 'yue': 'yuē',
+        'ie': 'iē',
         'er': 'ēr',
         'an': 'ān', 'en': 'ēn', 'in': 'yīn',
-        'wen': 'wēn', 'yun': 'yūn',
+        'wen': 'wēn',
         'ang': 'āng', 'eng': 'ēng', 'ing': 'yīng', 'ong': 'ōng',
 
         // 整体认读音节
         'zhi': 'zhī', 'chi': 'chī', 'shi': 'shī', 'ri': 'rī',
-        'zi': 'zī', 'ci': 'cī', 'si': 'sī',
+        'z': 'zī', 'c': 'cī', 's': 'sī',
         'yi': 'yī', 'wu': 'wū', 'yu': 'yū',
         'ye': 'yē', 'yue': 'yuē',
         'yuan': 'yuān', 'yin': 'yīn', 'yun': 'yūn', 'ying': 'yīng',
