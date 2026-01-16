@@ -1,11 +1,12 @@
 [build]
-  command = "pnpm run build"
+  command = "pnpm install && pnpm run build"
   publish = ".next"
-  
+
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
-  
+  NETLIFY_USE_PNPM = "true"
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
@@ -15,3 +16,16 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     X-XSS-Protection = "1; mode=block"
+
+# 处理 Next.js 静态资源
+[[redirects]]
+  from = "/_next/static/*"
+  to = "/_next/static/:splat"
+  status = 200
+
+# 处理所有路由
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
