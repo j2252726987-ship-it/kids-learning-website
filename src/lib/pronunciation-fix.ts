@@ -4,65 +4,37 @@
  */
 
 /**
- * 多音字修正映射表
- * 格式：{ "原字": "修正后的完整文本" }
- * 例如：{"还": "hái"} 会将 "还" 读作 "hái"
+ * 完整的拼音修正映射表
+ * 将可能读错的拼音映射到正确的朗读格式
  */
-export const PRONUNCIATION_FIXES: Record<string, string> = {
-  // 常见多音字修正
-  '还': 'hái',           // 还有、还是
-  '行': 'xíng',          // 行走、可以
-  '长': 'cháng',         // 长短
-  '好': 'hǎo',           // 好的
-  '了': 'le',            // 完成时态
-  '着': 'zhe',           // 进行时态
-  '得': 'de',            // 补语
-  '地': 'de',            // 副词后缀
-  '为': 'wéi',           // 为了
-  '便': 'biàn',          // 方便
-
-  // 拼音专用修正
+export const PINYIN_PRONUNCIATION_MAP: Record<string, string> = {
+  // 单韵母
   'a': 'a', 'o': 'o', 'e': 'e',
   'i': 'yi', 'u': 'wu', 'ü': 'yu',
+
+  // 复韵母
   'ai': 'ai', 'ei': 'ei', 'ui': 'wei',
   'ao': 'ao', 'ou': 'ou', 'iu': 'you',
   'ie': 'ie', 'üe': 'yue', 'er': 'er',
+
+  // 鼻韵母
   'an': 'an', 'en': 'en', 'in': 'yin',
   'un': 'wen', 'ün': 'yun',
   'ang': 'ang', 'eng': 'eng', 'ing': 'ying', 'ong': 'ong',
 
-  // 特殊情况修正
-  'ê': 'e',               // ê → e
-  'zh': 'zhi',            // zh → zhi
-  'ch': 'chi',            // ch → chi
-  'sh': 'shi',            // sh → shi
+  // 特殊组合
+  'ia': 'ya', 'iao': 'yao', 'ian': 'yan', 'iang': 'yang',
+  'ua': 'wa', 'uo': 'wo', 'uai': 'wai', 'uan': 'wan', 'uang': 'wang',
+  'üan': 'yuan',
 };
 
 /**
- * 修正文本中的多音字发音
- * @param text 原始文本
- * @returns 修正发音后的文本
+ * 移除拼音中的声调符号
  */
-export function fixPronunciation(text: string): string {
-  if (!text) return text;
-
-  // 逐字检查并替换
-  return text.split('').map(char => {
-    return PRONUNCIATION_FIXES[char] || char;
-  }).join('');
-}
-
-/**
- * 修正拼音朗读
- * 将拼音转换为更容易被浏览器正确朗读的格式
- * @param pinyin 原始拼音
- * @returns 修正后的拼音
- */
-export function fixPinyinPronunciation(pinyin: string): string {
+export function removeTones(pinyin: string): string {
   if (!pinyin) return pinyin;
 
-  // 移除声调符号（浏览器可能读不准带声调的拼音）
-  let fixed = pinyin
+  return pinyin
     .replace(/ā/g, 'a')
     .replace(/á/g, 'a')
     .replace(/ǎ/g, 'a')
@@ -88,12 +60,13 @@ export function fixPinyinPronunciation(pinyin: string): string {
     .replace(/ǚ/g, 'v')
     .replace(/ǜ/g, 'v')
     .replace(/ü/g, 'yu')
-    .replace(/1/g, '')
-    .replace(/2/g, '')
-    .replace(/3/g, '')
-    .replace(/4/g, '');
+    .replace(/[1-4]/g, ''); // 移除数字声调
+}
 
-  // 单字母拼音补音
+/**
+ * 修正单字母拼音
+ */
+export function fixSingleLetterPinyin(pinyin: string): string {
   const singleLetterMap: Record<string, string> = {
     'a': 'a',
     'o': 'o',
@@ -101,27 +74,180 @@ export function fixPinyinPronunciation(pinyin: string): string {
     'i': 'yi',
     'u': 'wu',
     'v': 'yu',
+    'ü': 'yu',
   };
 
-  if (singleLetterMap[fixed]) {
-    fixed = singleLetterMap[fixed];
+  if (singleLetterMap[pinyin]) {
+    return singleLetterMap[pinyin];
   }
 
-  // 复合韵母修正
-  const yunmuMap: Record<string, string> = {
-    'iu': 'you',
+  return pinyin;
+}
+
+/**
+ * 修正复合韵母
+ */
+export function fixCompoundYunmu(pinyin: string): string {
+  // 复合韵母修正表
+  const yunmuFixes: Record<string, string> = {
     'ui': 'wei',
+    'iu': 'you',
     'un': 'wen',
-    'ie': 'ie',
-    'üe': 'yue',
+    'ün': 'yun',
   };
 
-  for (const [key, value] of Object.entries(yunmuMap)) {
-    if (fixed.endsWith(key)) {
-      fixed = fixed.slice(0, -key.length) + value;
-      break;
+  for (const [key, value] of Object.entries(yunmuFixes)) {
+    if (pinyin.endsWith(key)) {
+      return pinyin.slice(0, -key.length) + value;
     }
   }
 
+  return pinyin;
+}
+
+/**
+ * 修正以 y/w 开头的组合
+ */
+export function fixYWCombinations(pinyin: string): string {
+  // 以 y 开头的组合
+  const yCombinations: Record<string, string> = {
+    'ia': 'ya',
+    'ie': 'ye',
+    'iao': 'yao',
+    'iou': 'you',
+    'ian': 'yan',
+    'in': 'yin',
+    'iang': 'yang',
+    'ing': 'ying',
+    'iong': 'yong',
+  };
+
+  for (const [key, value] of Object.entries(yCombinations)) {
+    if (pinyin.startsWith(key)) {
+      return value;
+    }
+  }
+
+  // 以 w 开头的组合
+  const wCombinations: Record<string, string> = {
+    'ua': 'wa',
+    'uo': 'wo',
+    'uai': 'wai',
+    'uei': 'wei',
+    'uan': 'wan',
+    'uen': 'wen',
+    'uang': 'wang',
+    'ong': 'weng', // 特殊处理
+  };
+
+  for (const [key, value] of Object.entries(wCombinations)) {
+    if (pinyin.startsWith(key)) {
+      return value;
+    }
+  }
+
+  return pinyin;
+}
+
+/**
+ * 修正 ü 的组合
+ */
+export function fixUCombinations(pinyin: string): string {
+  const uCombinations: Record<string, string> = {
+    'ü': 'yu',
+    'üe': 'yue',
+    'üan': 'yuan',
+    'ün': 'yun',
+  };
+
+  for (const [key, value] of Object.entries(uCombinations)) {
+    if (pinyin.includes(key)) {
+      pinyin = pinyin.replace(key, value);
+    }
+  }
+
+  return pinyin;
+}
+
+/**
+ * 完整的拼音修正流程
+ */
+export function fixPinyinPronunciation(pinyin: string): string {
+  if (!pinyin) return pinyin;
+
+  // 1. 移除声调符号
+  let fixed = removeTones(pinyin);
+
+  // 2. 转换为小写
+  fixed = fixed.toLowerCase();
+
+  // 3. 修正 ü 相关组合
+  fixed = fixUCombinations(fixed);
+
+  // 4. 修正 y/w 组合
+  fixed = fixYWCombinations(fixed);
+
+  // 5. 修正复合韵母
+  fixed = fixCompoundYunmu(fixed);
+
+  // 6. 修正单字母拼音
+  fixed = fixSingleLetterPinyin(fixed);
+
+  // 7. 查表修正（兜底）
+  if (PINYIN_PRONUNCIATION_MAP[fixed]) {
+    fixed = PINYIN_PRONUNCIATION_MAP[fixed];
+  }
+
   return fixed;
+}
+
+/**
+ * 修正汉字发音（用于多音字）
+ */
+export const PRONUNCIATION_FIXES: Record<string, string> = {
+  // 常见多音字修正
+  '还': 'hai',           // 还有、还是
+  '行': 'xing',          // 行走、可以
+  '长': 'chang',         // 长短
+  '好': 'hao',           // 好的
+  '了': 'le',            // 完成时态
+  '着': 'zhe',           // 进行时态
+  '得': 'de',            // 补语
+  '地': 'de',            // 副词后缀
+  '为': 'wei',           // 为了
+  '便': 'bian',          // 方便
+};
+
+/**
+ * 修正文本中的多音字发音
+ */
+export function fixPronunciation(text: string): string {
+  if (!text) return text;
+
+  return text.split('').map(char => {
+    return PRONUNCIATION_FIXES[char] || char;
+  }).join('');
+}
+
+/**
+ * 检查拼音是否可能无法朗读
+ */
+export function isPinyinReadable(pinyin: string): boolean {
+  if (!pinyin) return false;
+
+  // 移除声调后的版本
+  const withoutTones = removeTones(pinyin).toLowerCase();
+
+  // 检查是否在修正表中
+  if (PINYIN_PRONUNCIATION_MAP[withoutTones]) {
+    return true;
+  }
+
+  // 检查是否是有效的拼音字母组合
+  const validPattern = /^[a-zü]+$/;
+  if (!validPattern.test(withoutTones)) {
+    return false;
+  }
+
+  return true;
 }
