@@ -44,7 +44,7 @@ export const thousandCharSections: ThousandCharSection[] = [
       { char: '盈', pinyin: 'yíng', level: 'intermediate', words: ['盈余', '充满'], meaning: '满；充满' },
       { char: '昃', pinyin: 'zè', level: 'advanced', words: [], meaning: '太阳偏西' },
       { char: '辰', pinyin: 'chén', level: 'intermediate', words: ['星辰', '早晨'], meaning: '星；时间' },
-      { char: '宿', pinyin: 'sù', level: 'intermediate', words: ['住宿', '宿舍'], meaning: '住宿；星宿' },
+      { char: '宿', pinyin: 'xiù', level: 'intermediate', words: ['住宿', '宿舍'], meaning: '住宿；星宿' },
       { char: '列', pinyin: 'liè', level: 'basic', words: ['排列', '列表'], meaning: '排列' },
       { char: '张', pinyin: 'zhāng', level: 'basic', words: ['张开', '纸张'], meaning: '展开；张开' },
     ]
