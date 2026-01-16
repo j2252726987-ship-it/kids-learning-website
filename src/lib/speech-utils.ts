@@ -82,8 +82,8 @@ function isFemaleVoice(voice: SpeechSynthesisVoice): boolean {
 }
 
 /**
- * 获取最佳的中文语音（男主播播音口音）
- * 优先选择低沉、清晰、有磁性的男声
+ * 获取最佳的中文语音（女主播播音口音）
+ * 优先选择清晰、温柔的女声
  */
 function getBestChineseVoice(): SpeechSynthesisVoice | null {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
@@ -105,21 +105,14 @@ function getBestChineseVoice(): SpeechSynthesisVoice | null {
   const zhCNVoices = chineseVoices.filter((voice) => voice.lang === 'zh-CN');
 
   if (zhCNVoices.length > 0) {
-    // 第一优先级：明确的男声
-    const maleVoices = zhCNVoices.filter(isMaleVoice);
-    if (maleVoices.length > 0) {
-      console.log('选择男声:', maleVoices[0].name);
-      return maleVoices[0];
+    // 第一优先级：明确的女声
+    const femaleVoices = zhCNVoices.filter(isFemaleVoice);
+    if (femaleVoices.length > 0) {
+      console.log('选择女声:', femaleVoices[0].name);
+      return femaleVoices[0];
     }
 
-    // 第二优先级：非女声（中性或未知的）
-    const nonFemaleVoices = zhCNVoices.filter(voice => !isFemaleVoice(voice));
-    if (nonFemaleVoices.length > 0) {
-      console.log('选择非女声:', nonFemaleVoices[0].name);
-      return nonFemaleVoices[0];
-    }
-
-    // 第三优先级：返回第一个简体中文语音（即使可能是女声）
+    // 第二优先级：返回第一个简体中文语音
     console.log('选择第一个中文语音:', zhCNVoices[0].name);
     return zhCNVoices[0];
   }
@@ -137,7 +130,7 @@ function getBestChineseVoice(): SpeechSynthesisVoice | null {
 }
 
 /**
- * 朗读文本（男主播播音口音）
+ * 朗读文本（女主播播音口音）
  * @param text 要朗读的文本
  * @param options 可选参数
  */
@@ -155,11 +148,11 @@ export function speakText(text: string, options: SpeechOptions = {}): void {
   // 设置语言（默认中文）
   utterance.lang = options.lang || 'zh-CN';
 
-  // 设置语速（0.85-0.95，适中语速，男主播播音标准）
+  // 设置语速（0.85-0.95，适中语速，女主播播音标准）
   utterance.rate = options.rate ?? 0.9;
 
-  // 设置音调（0.9，低沉专业，男主播播音标准音调）
-  utterance.pitch = options.pitch ?? 0.9;
+  // 设置音调（1.1，清亮温柔，女主播播音标准音调）
+  utterance.pitch = options.pitch ?? 1.1;
 
   // 设置音量
   utterance.volume = options.volume ?? 1.0;
