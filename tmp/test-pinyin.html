@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>测试拼音发音</title>
+</head>
+<body>
+  <h1>拼音发音测试</h1>
+  <button onclick="testPronunciation('bo')">测试 bo</button>
+  <button onclick="testPronunciation('a')">测试 a</button>
+  <button onclick="testPronunciation('yi')">测试 yi</button>
+  <button onclick="testPronunciation('zhi')">测试 zhi</button>
+  <button onclick="testPronunciation('bo a yi zhi')">测试组合</button>
+  
+  <script>
+    function testPronunciation(text) {
+      console.log('朗读:', text);
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-CN';
+      utterance.rate = 0.95;
+      utterance.pitch = 1.1;
+      speechSynthesis.speak(utterance);
+    }
+    
+    // 打印所有语音
+    window.speechSynthesis.onvoiceschanged = () => {
+      const voices = window.speechSynthesis.getVoices();
+      console.log('可用语音:');
+      voices.forEach(voice => {
+        if (voice.lang.startsWith('zh')) {
+          console.log(`${voice.name} - ${voice.lang}`);
+        }
+      });
+    };
+  </script>
+</body>
+</html>

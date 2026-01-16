@@ -20,16 +20,35 @@ export function PinyinCard({ letter, onClick, size = 'medium' }: PinyinCardProps
 
     // 直接朗读拼音，使用女声
     if ('speechSynthesis' in window) {
-      // 直接使用拼音数据中的 pinyin 字段
-      const textToSpeak = letter.pinyin;
+      // 在拼音前加上顿号，让浏览器识别为中文环境
+      const textToSpeak = '、' + letter.pinyin;
+
+      console.log('朗读内容:', textToSpeak, '类型:', letter.category);
 
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = 'zh-CN';
       utterance.rate = 0.95; // 适中语速
       utterance.pitch = 1.1; // 女主播播音音调（清亮温柔）
 
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
+      // 选择女声
+      const voices = window.speechSynthesis.getVoices();
+      const femaleVoices = voices.filter(v =>
+        v.lang === 'zh-CN' &&
+        (v.name.includes('xiaoxi') || v.name.includes('huihui') || v.name.includes('lili') || v.name.toLowerCase().includes('female'))
+      );
+      if (femaleVoices.length > 0) {
+        utterance.voice = femaleVoices[0];
+        console.log('使用语音:', femaleVoices[0].name);
+      }
+
+      utterance.onend = () => {
+        console.log('朗读结束:', textToSpeak);
+        setIsSpeaking(false);
+      };
+      utterance.onerror = (e) => {
+        console.error('朗读错误:', e, textToSpeak);
+        setIsSpeaking(false);
+      };
       speechSynthesis.speak(utterance);
     }
   };
