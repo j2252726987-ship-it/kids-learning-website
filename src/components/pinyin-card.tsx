@@ -19,54 +19,74 @@ export function PinyinCard({ letter, onClick, size = 'medium' }: PinyinCardProps
     stopSpeaking(); // 停止之前的朗读
 
     if ('speechSynthesis' in window) {
-      // 拼音到带声调拼音的映射（使用第一声，避免日语识别）
-      const pinyinToneMap: Record<string, string> = {
-        // 声母（使用对应的完整音节）
-        'b': 'bō', 'p': 'pō', 'm': 'mō', 'f': 'fō',
-        'd': 'dē', 't': 'tē', 'n': 'nē', 'l': 'lē',
-        'g': 'gē', 'k': 'kē', 'h': 'hē',
-        'j': 'jī', 'q': 'qī', 'x': 'xī',
-        'zh': 'zhī', 'ch': 'chī', 'sh': 'shī', 'r': 'rī',
-        'y': 'yī', 'w': 'wū',
+      // 拼音到汉字的映射（使用汉字确保 TTS 正确识别为中文）
+      const pinyinToHanzi: Record<string, string> = {
+        // 声母
+        'b': '玻', 'p': '坡', 'm': '摸', 'f': '佛',
+        'd': '得', 't': '特', 'n': '讷', 'l': '勒',
+        'g': '哥', 'k': '科', 'h': '喝',
+        'j': '基', 'q': '期', 'x': '希',
+        'zh': '知', 'ch': '吃', 'sh': '诗', 'r': '日',
+        'z': '资', 'c': '刺', 's': '思',
+        'y': '衣', 'w': '乌',
 
         // 单韵母
-        'a': 'ā', 'o': 'ō', 'e': 'ē',
-        'i': 'ī', 'u': 'ū',
-        'v': 'yū', 'ü': 'yū',
+        'a': '阿', 'o': '喔', 'e': '鹅',
+        'i': '衣', 'u': '乌',
+        'v': '迂', 'ü': '迂',
 
         // 复韵母
-        'ai': 'āi', 'ei': 'ēi', 'ui': 'wēi',
-        'ao': 'āo', 'ou': 'ōu', 'iu': 'yōu',
-        'ie': 'iē',
-        'er': 'ēr',
-        'an': 'ān', 'en': 'ēn', 'in': 'yīn',
-        'wen': 'wēn',
-        'ang': 'āng', 'eng': 'ēng', 'ing': 'yīng', 'ong': 'ōng',
+        'ai': '哀', 'ei': '诶', 'ui': '威',
+        'ao': '奥', 'ou': '欧', 'iu': '优',
+        'ie': '耶',
+        'er': '儿',
+        'an': '安', 'en': '恩', 'in': '音',
+        'wen': '温',
+        'ang': '昂', 'eng': '亨', 'ing': '英', 'ong': '轰',
+
+        // 鼻韵母组合
+        'un': '温', 'ün': '晕',
+        'iao': '腰', 'ian': '烟', 'iang': '扬',
+        'ua': '娃', 'uo': '沃', 'uai': '歪', 'uan': '弯', 'uang': '汪',
+        'üan': '冤', 'üe': '约',
 
         // 整体认读音节
-        'zhi': 'zhī', 'chi': 'chī', 'shi': 'shī', 'ri': 'rī',
-        'z': 'zī', 'c': 'cī', 's': 'sī',
-        'yi': 'yī', 'wu': 'wū', 'yu': 'yū',
-        'ye': 'yē', 'yue': 'yuē',
-        'yuan': 'yuān', 'yin': 'yīn', 'yun': 'yūn', 'ying': 'yīng',
+        'zhi': '知', 'chi': '吃', 'shi': '诗', 'ri': '日',
+        'zi': '资', 'ci': '刺', 'si': '思',
+        'yi': '衣', 'wu': '乌', 'yu': '迂',
+        'ye': '耶', 'yue': '约',
+        'yuan': '冤', 'yin': '音', 'yun': '晕', 'ying': '英',
       };
 
-      // 获取带声调的拼音
-      const textToSpeak = pinyinToneMap[letter.pinyin] || letter.pinyin;
+      // 获取对应的汉字
+      const textToSpeak = pinyinToHanzi[letter.pinyin] || letter.examples?.[0] || letter.pinyin;
 
-      console.log('原始拼音:', letter.pinyin, '朗读内容:', textToSpeak, '类型:', letter.category);
+      console.log('拼音朗读:', letter.pinyin, '->', textToSpeak, '类型:', letter.category);
 
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = 'zh-CN';
-      utterance.rate = 1.0; // 正常语速
+      utterance.rate = 0.95; // 稍慢语速
       utterance.pitch = 1.1; // 女主播播音音调
 
       // 选择中文语音
       const voices = window.speechSynthesis.getVoices();
       const zhCNVoices = voices.filter(v => v.lang === 'zh-CN');
-      if (zhCNVoices.length > 0) {
+
+      // 优先选择女声
+      const femaleVoice = zhCNVoices.find(v =>
+        v.name.toLowerCase().includes('xiaoxi') ||
+        v.name.toLowerCase().includes('huihui') ||
+        v.name.toLowerCase().includes('lili') ||
+        v.name.toLowerCase().includes('female') ||
+        v.name.toLowerCase().includes('女')
+      );
+
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+        console.log('使用女声:', femaleVoice.name);
+      } else if (zhCNVoices.length > 0) {
         utterance.voice = zhCNVoices[0];
-        console.log('使用语音:', zhCNVoices[0].name);
+        console.log('使用中文语音:', zhCNVoices[0].name);
       } else {
         console.log('未找到zh-CN语音');
       }
