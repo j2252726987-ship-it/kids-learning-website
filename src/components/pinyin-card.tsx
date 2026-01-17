@@ -1,7 +1,7 @@
 'use client';
 
 import { PinyinLetter } from '@/lib/pinyin-data';
-import { stopSpeaking } from '@/lib/speech-utils';
+import { speakPinyin, speakText, stopSpeaking } from '@/lib/speech-utils';
 import { useState } from 'react';
 
 interface PinyinCardProps {
@@ -14,148 +14,14 @@ export function PinyinCard({ letter, onClick, size = 'medium' }: PinyinCardProps
   const [isFlipped, setIsFlipped] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // 拼音到汉字的映射表（使用汉字确保 TTS 正确识别为中文）
-  const pinyinToHanzi: Record<string, string> = {
-    // 声母
-    'b': '玻', 'p': '坡', 'm': '摸', 'f': '佛',
-    'd': '得', 't': '特', 'n': '讷', 'l': '勒',
-    'g': '哥', 'k': '科', 'h': '喝',
-    'j': '基', 'q': '期', 'x': '希',
-    'zh': '知', 'ch': '吃', 'sh': '诗', 'r': '日',
-    'z': '资', 'c': '刺', 's': '思',
-    'y': '衣', 'w': '乌',
-
-    // 单韵母
-    'a': '阿', 'o': '喔', 'e': '鹅',
-    'i': '衣', 'u': '乌',
-    'v': '迂', 'ü': '迂',
-
-    // 复韵母
-    'ai': '哀', 'ei': '诶', 'ui': '威',
-    'ao': '奥', 'ou': '欧', 'iu': '优',
-    'ie': '耶',
-    'er': '儿',
-    'an': '安', 'en': '恩', 'in': '音',
-    'wen': '温',
-    'ang': '昂', 'eng': '亨', 'ing': '英', 'ong': '轰',
-
-    // 鼻韵母组合
-    'un': '温', 'ün': '晕',
-    'iao': '腰', 'ian': '烟', 'iang': '扬',
-    'ua': '娃', 'uo': '沃', 'uai': '歪', 'uan': '弯', 'uang': '汪',
-    'üan': '冤', 'üe': '约',
-
-    // 整体认读音节
-    'zhi': '知', 'chi': '吃', 'shi': '诗', 'ri': '日',
-    'zi': '资', 'ci': '刺', 'si': '思',
-    'yi': '衣', 'wu': '乌', 'yu': '迂',
-    'ye': '耶', 'yue': '约',
-    'yuan': '冤', 'yin': '音', 'yun': '晕', 'ying': '英',
-  };
-
-  const getChineseVoice = () => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      return null;
-    }
-
-    const voices = window.speechSynthesis.getVoices();
-    console.log('所有可用语音:', voices.map(v => `${v.name} (${v.lang})`).join(', '));
-
-    // 只选择中国大陆的中文语音，明确排除日语
-    const zhCNVoices = voices.filter(v =>
-      v.lang === 'zh-CN' &&
-      !v.name.toLowerCase().includes('japanese') &&
-      !v.name.toLowerCase().includes('japan') &&
-      !v.lang.startsWith('ja')
-    );
-
-    console.log('筛选后的中文语音:', zhCNVoices.map(v => `${v.name} (${v.lang})`).join(', '));
-
-    if (zhCNVoices.length === 0) {
-      console.warn('未找到中文语音，尝试其他中文语音...');
-      // 尝试其他中文语音
-      const otherChinese = voices.filter(v => v.lang.startsWith('zh'));
-      if (otherChinese.length > 0) {
-        console.log('使用其他中文语音:', otherChinese.map(v => `${v.name} (${v.lang})`).join(', '));
-        return otherChinese[0];
-      }
-      console.error('完全没有找到中文语音！');
-      return null;
-    }
-
-    // 优先选择明确的女声
-    const femaleVoice = zhCNVoices.find(v =>
-      v.name.toLowerCase().includes('xiaoxi') ||
-      v.name.toLowerCase().includes('huihui') ||
-      v.name.toLowerCase().includes('lili') ||
-      v.name.toLowerCase().includes('female') ||
-      v.name.toLowerCase().includes('女') ||
-      v.name.toLowerCase().includes('yaoyao') ||
-      v.name.toLowerCase().includes('xiao')
-    );
-
-    if (femaleVoice) {
-      console.log('选择女声:', femaleVoice.name, `(${femaleVoice.lang})`);
-      return femaleVoice;
-    }
-
-    // 选择 Microsoft 的中文语音
-    const microsoftVoice = zhCNVoices.find(v => v.name.toLowerCase().includes('microsoft'));
-    if (microsoftVoice) {
-      console.log('选择 Microsoft 语音:', microsoftVoice.name, `(${microsoftVoice.lang})`);
-      return microsoftVoice;
-    }
-
-    // 使用第一个中文语音
-    console.log('选择第一个中文语音:', zhCNVoices[0].name, `(${zhCNVoices[0].lang})`);
-    return zhCNVoices[0];
-  };
-
-  // 朗读拼音
-  const speakPinyin = () => {
+  // 朗读拼音（使用统一的 speech-utils）
+  const handleSpeakPinyin = () => {
     setIsSpeaking(true);
-    stopSpeaking();
-
-    if ('speechSynthesis' in window) {
-      const textToSpeak = pinyinToHanzi[letter.pinyin] || letter.pinyin;
-
-      console.log('===== 开始拼音朗读 =====');
-      console.log('原始拼音:', letter.pinyin);
-      console.log('朗读汉字:', textToSpeak);
-      console.log('拼音类型:', letter.category);
-
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-
-      // 强制设置为中文
-      utterance.lang = 'zh-CN';
-
-      // 语速和音调
-      utterance.rate = 0.95;
-      utterance.pitch = 1.1;
-
-      const voice = getChineseVoice();
-      if (voice) {
-        utterance.voice = voice;
-        console.log('使用语音:', voice.name, '语言:', voice.lang);
-      } else {
-        console.error('没有找到中文语音！');
-      }
-
-      // 最终确认语言设置
-      console.log('Utterance 语言设置:', utterance.lang);
-
-      utterance.onend = () => {
-        console.log('✅ 拼音朗读成功:', textToSpeak);
-        setIsSpeaking(false);
-      };
-      utterance.onerror = (e) => {
-        console.error('❌ 朗读错误:', e);
-        setIsSpeaking(false);
-      };
-
-      speechSynthesis.speak(utterance);
-      console.log('===== 发送朗读指令 =====');
-    }
+    console.log('===== 开始拼音朗读 =====');
+    console.log('拼音:', letter.pinyin);
+    console.log('类型:', letter.category);
+    speakPinyin(letter.pinyin);
+    setTimeout(() => setIsSpeaking(false), 1000);
   };
 
   // 朗读所有示例词
@@ -163,61 +29,33 @@ export function PinyinCard({ letter, onClick, size = 'medium' }: PinyinCardProps
     setIsSpeaking(true);
     stopSpeaking();
 
-    if ('speechSynthesis' in window) {
-      let index = 0;
+    console.log('===== 开始朗读例词 =====');
+    console.log('例词列表:', letter.examples);
 
-      console.log('===== 开始朗读例词 =====');
-      console.log('例词列表:', letter.examples);
+    let index = 0;
+    const speakNext = () => {
+      if (index >= letter.examples.length) {
+        console.log('✅ 所有例词朗读完成');
+        setIsSpeaking(false);
+        return;
+      }
 
-      const speakNext = () => {
-        if (index >= letter.examples.length) {
-          console.log('✅ 所有例词朗读完成');
-          setIsSpeaking(false);
-          return;
-        }
+      const example = letter.examples[index];
+      console.log(`朗读例词 [${index + 1}/${letter.examples.length}]:`, example);
 
-        const example = letter.examples[index];
-        console.log(`朗读例词 [${index + 1}/${letter.examples.length}]:`, example);
+      speakText(example, { rate: 0.9, pitch: 1.1 });
 
-        const utterance = new SpeechSynthesisUtterance(example);
+      index++;
+      setTimeout(speakNext, 1000); // 每个词之间停顿 1 秒
+    };
 
-        // 强制设置为中文
-        utterance.lang = 'zh-CN';
-
-        utterance.rate = 0.9;
-        utterance.pitch = 1.1;
-
-        const voice = getChineseVoice();
-        if (voice) {
-          utterance.voice = voice;
-          console.log('使用语音:', voice.name, '语言:', voice.lang);
-        } else {
-          console.error('没有找到中文语音！');
-        }
-
-        utterance.onend = () => {
-          index++;
-          console.log(`✅ 例词 [${index}] 朗读完成，停顿 0.5 秒`);
-          // 每个词之间停顿 0.5 秒
-          setTimeout(speakNext, 500);
-        };
-
-        utterance.onerror = (e) => {
-          console.error('❌ 朗读错误:', e);
-          setIsSpeaking(false);
-        };
-
-        speechSynthesis.speak(utterance);
-      };
-
-      speakNext();
-    }
+    speakNext();
   };
 
   const handleClick = () => {
     // 点击正面时朗读拼音
     if (!isFlipped) {
-      speakPinyin();
+      handleSpeakPinyin();
     }
     setIsFlipped(!isFlipped);
     if (onClick) onClick();

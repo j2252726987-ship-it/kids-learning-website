@@ -82,8 +82,39 @@ function isFemaleVoice(voice: SpeechSynthesisVoice): boolean {
 }
 
 /**
- * 获取最佳的中文语音（女主播播音口音）
- * 优先选择清晰、温柔的女声
+ * 检查语音是否为日语（严格过滤）
+ */
+function isJapaneseVoice(voice: SpeechSynthesisVoice): boolean {
+  const name = voice.name.toLowerCase();
+  const lang = voice.lang.toLowerCase();
+
+  // 检查语言标识
+  if (lang === 'ja' || lang === 'ja-jp' || lang.startsWith('jpn')) {
+    console.log('过滤日语语音（语言标识）:', voice.name, voice.lang);
+    return true;
+  }
+
+  // 检查语音名称中的日语标识
+  const japanesePatterns = [
+    'japanese',
+    'japan',
+    'kyoko',      // Kyoko - 日语语音
+    'otoya',      // Otoya - 日语语音
+    'ayumi',      // Ayumi - 日语语音
+    'haruka',     // Haruka - 日语语音
+  ];
+
+  if (japanesePatterns.some(pattern => name.includes(pattern))) {
+    console.log('过滤日语语音（名称）:', voice.name, voice.lang);
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * 获取最佳的中文语音（兜底方案 - 强制中文）
+ * 严格过滤日语，确保100%使用中文语音
  */
 function getBestChineseVoice(): SpeechSynthesisVoice | null {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
@@ -92,45 +123,70 @@ function getBestChineseVoice(): SpeechSynthesisVoice | null {
 
   const voices = window.speechSynthesis.getVoices();
 
+  console.log('=== 可用语音列表 ===');
+  voices.forEach(v => {
+    console.log(`  ${v.name} - ${v.lang}`);
+  });
+  console.log('==================');
+
+  // 严格过滤日语语音
+  const safeVoices = voices.filter(voice => !isJapaneseVoice(voice));
+  console.log('过滤后可用语音数量:', safeVoices.length);
+
   // 优先选择中文语音
-  const chineseVoices = voices.filter(
+  const chineseVoices = safeVoices.filter(
     (voice) => voice.lang.startsWith('zh') || voice.lang.startsWith('cmn')
   );
 
   if (chineseVoices.length === 0) {
+    console.warn('警告：未找到中文语音！');
     return null;
   }
+
+  console.log('找到中文语音数量:', chineseVoices.length);
+  chineseVoices.forEach(v => {
+    console.log(`  中文语音: ${v.name} - ${v.lang}`);
+  });
 
   // 优先选择中国大陆的语音
   const zhCNVoices = chineseVoices.filter((voice) => voice.lang === 'zh-CN');
 
   if (zhCNVoices.length > 0) {
+    console.log('zh-CN 语音数量:', zhCNVoices.length);
+
     // 第一优先级：明确的女声
     const femaleVoices = zhCNVoices.filter(isFemaleVoice);
     if (femaleVoices.length > 0) {
-      console.log('选择女声:', femaleVoices[0].name);
+      console.log('✅ 选择女声:', femaleVoices[0].name);
       return femaleVoices[0];
     }
 
     // 第二优先级：返回第一个简体中文语音
-    console.log('选择第一个中文语音:', zhCNVoices[0].name);
+    console.log('✅ 选择第一个中文语音:', zhCNVoices[0].name);
     return zhCNVoices[0];
   }
 
   // 其次选择台湾的语音
   const zhTW = chineseVoices.find((voice) => voice.lang === 'zh-TW');
-  if (zhTW) return zhTW;
+  if (zhTW) {
+    console.log('✅ 选择台湾语音:', zhTW.name);
+    return zhTW;
+  }
 
   // 再次选择香港的语音
   const zhHK = chineseVoices.find((voice) => voice.lang === 'zh-HK');
-  if (zhHK) return zhHK;
+  if (zhHK) {
+    console.log('✅ 选择香港语音:', zhHK.name);
+    return zhHK;
+  }
 
   // 最后返回第一个中文语音
+  console.log('✅ 选择第一个中文语音（其他变体）:', chineseVoices[0].name);
   return chineseVoices[0];
 }
 
 /**
- * 朗读文本（女主播播音口音）
+ * 朗读文本（女主播播音口音 - 兜底方案）
  * @param text 要朗读的文本
  * @param options 可选参数
  */
@@ -145,8 +201,8 @@ export function speakText(text: string, options: SpeechOptions = {}): void {
 
   const utterance = new SpeechSynthesisUtterance(text);
 
-  // 设置语言（默认中文）
-  utterance.lang = options.lang || 'zh-CN';
+  // 强制设置语言为中文（兜底方案）
+  utterance.lang = 'zh-CN';
 
   // 设置语速（0.85-0.95，适中语速，女主播播音标准）
   utterance.rate = options.rate ?? 0.9;
@@ -157,10 +213,29 @@ export function speakText(text: string, options: SpeechOptions = {}): void {
   // 设置音量
   utterance.volume = options.volume ?? 1.0;
 
-  // 选择最佳的中文语音（男主播风格）
+  // 选择最佳的中文语音（严格过滤日语）
   const voice = getBestChineseVoice();
   if (voice) {
     utterance.voice = voice;
+    console.log('=== 朗读配置 ===');
+    console.log('文本:', text);
+    console.log('语音:', voice.name);
+    console.log('语言:', voice.lang);
+    console.log('语速:', utterance.rate);
+    console.log('音调:', utterance.pitch);
+    console.log('===============');
+  } else {
+    console.warn('警告：未找到中文语音，使用默认语音！这可能导致发音不正确。');
+  }
+
+  // 额外保护：强制确保语言为 zh-CN
+  if (utterance.voice && !utterance.voice.lang.startsWith('zh')) {
+    console.warn('警告：选中的语音不是中文！尝试重新选择...');
+    const zhVoice = window.speechSynthesis.getVoices().find(v => v.lang.startsWith('zh'));
+    if (zhVoice) {
+      utterance.voice = zhVoice;
+      console.log('✅ 已重新选择中文语音:', zhVoice.name);
+    }
   }
 
   // 开始朗读
