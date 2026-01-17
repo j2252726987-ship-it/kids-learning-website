@@ -59,21 +59,56 @@ export function PinyinCard({ letter, onClick, size = 'medium' }: PinyinCardProps
     }
 
     const voices = window.speechSynthesis.getVoices();
-    const zhCNVoices = voices.filter(v => v.lang === 'zh-CN');
+    console.log('所有可用语音:', voices.map(v => `${v.name} (${v.lang})`).join(', '));
 
-    // 优先选择女声
+    // 只选择中国大陆的中文语音，明确排除日语
+    const zhCNVoices = voices.filter(v =>
+      v.lang === 'zh-CN' &&
+      !v.name.toLowerCase().includes('japanese') &&
+      !v.name.toLowerCase().includes('japan') &&
+      !v.lang.startsWith('ja')
+    );
+
+    console.log('筛选后的中文语音:', zhCNVoices.map(v => `${v.name} (${v.lang})`).join(', '));
+
+    if (zhCNVoices.length === 0) {
+      console.warn('未找到中文语音，尝试其他中文语音...');
+      // 尝试其他中文语音
+      const otherChinese = voices.filter(v => v.lang.startsWith('zh'));
+      if (otherChinese.length > 0) {
+        console.log('使用其他中文语音:', otherChinese.map(v => `${v.name} (${v.lang})`).join(', '));
+        return otherChinese[0];
+      }
+      console.error('完全没有找到中文语音！');
+      return null;
+    }
+
+    // 优先选择明确的女声
     const femaleVoice = zhCNVoices.find(v =>
       v.name.toLowerCase().includes('xiaoxi') ||
       v.name.toLowerCase().includes('huihui') ||
       v.name.toLowerCase().includes('lili') ||
       v.name.toLowerCase().includes('female') ||
-      v.name.toLowerCase().includes('女')
+      v.name.toLowerCase().includes('女') ||
+      v.name.toLowerCase().includes('yaoyao') ||
+      v.name.toLowerCase().includes('xiao')
     );
 
-    if (femaleVoice) return femaleVoice;
-    if (zhCNVoices.length > 0) return zhCNVoices[0];
+    if (femaleVoice) {
+      console.log('选择女声:', femaleVoice.name, `(${femaleVoice.lang})`);
+      return femaleVoice;
+    }
 
-    return null;
+    // 选择 Microsoft 的中文语音
+    const microsoftVoice = zhCNVoices.find(v => v.name.toLowerCase().includes('microsoft'));
+    if (microsoftVoice) {
+      console.log('选择 Microsoft 语音:', microsoftVoice.name, `(${microsoftVoice.lang})`);
+      return microsoftVoice;
+    }
+
+    // 使用第一个中文语音
+    console.log('选择第一个中文语音:', zhCNVoices[0].name, `(${zhCNVoices[0].lang})`);
+    return zhCNVoices[0];
   };
 
   // 朗读拼音
@@ -84,28 +119,42 @@ export function PinyinCard({ letter, onClick, size = 'medium' }: PinyinCardProps
     if ('speechSynthesis' in window) {
       const textToSpeak = pinyinToHanzi[letter.pinyin] || letter.pinyin;
 
-      console.log('拼音朗读:', letter.pinyin, '->', textToSpeak, '类型:', letter.category);
+      console.log('===== 开始拼音朗读 =====');
+      console.log('原始拼音:', letter.pinyin);
+      console.log('朗读汉字:', textToSpeak);
+      console.log('拼音类型:', letter.category);
 
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
+
+      // 强制设置为中文
       utterance.lang = 'zh-CN';
+
+      // 语速和音调
       utterance.rate = 0.95;
       utterance.pitch = 1.1;
 
       const voice = getChineseVoice();
       if (voice) {
         utterance.voice = voice;
-        console.log('使用语音:', voice.name);
+        console.log('使用语音:', voice.name, '语言:', voice.lang);
+      } else {
+        console.error('没有找到中文语音！');
       }
 
+      // 最终确认语言设置
+      console.log('Utterance 语言设置:', utterance.lang);
+
       utterance.onend = () => {
-        console.log('拼音朗读成功:', textToSpeak);
+        console.log('✅ 拼音朗读成功:', textToSpeak);
         setIsSpeaking(false);
       };
       utterance.onerror = (e) => {
-        console.error('朗读错误:', e);
+        console.error('❌ 朗读错误:', e);
         setIsSpeaking(false);
       };
+
       speechSynthesis.speak(utterance);
+      console.log('===== 发送朗读指令 =====');
     }
   };
 
@@ -117,33 +166,44 @@ export function PinyinCard({ letter, onClick, size = 'medium' }: PinyinCardProps
     if ('speechSynthesis' in window) {
       let index = 0;
 
+      console.log('===== 开始朗读例词 =====');
+      console.log('例词列表:', letter.examples);
+
       const speakNext = () => {
         if (index >= letter.examples.length) {
+          console.log('✅ 所有例词朗读完成');
           setIsSpeaking(false);
           return;
         }
 
         const example = letter.examples[index];
-        console.log('朗读例词:', example, `(${index + 1}/${letter.examples.length})`);
+        console.log(`朗读例词 [${index + 1}/${letter.examples.length}]:`, example);
 
         const utterance = new SpeechSynthesisUtterance(example);
+
+        // 强制设置为中文
         utterance.lang = 'zh-CN';
+
         utterance.rate = 0.9;
         utterance.pitch = 1.1;
 
         const voice = getChineseVoice();
         if (voice) {
           utterance.voice = voice;
+          console.log('使用语音:', voice.name, '语言:', voice.lang);
+        } else {
+          console.error('没有找到中文语音！');
         }
 
         utterance.onend = () => {
           index++;
+          console.log(`✅ 例词 [${index}] 朗读完成，停顿 0.5 秒`);
           // 每个词之间停顿 0.5 秒
           setTimeout(speakNext, 500);
         };
 
         utterance.onerror = (e) => {
-          console.error('朗读错误:', e);
+          console.error('❌ 朗读错误:', e);
           setIsSpeaking(false);
         };
 
